@@ -1,8 +1,10 @@
 import { markInvoicePaid } from "@/app/app/actions";
 import {
   formatInvoiceAmount,
+  formatInvoiceDate,
   getInvoiceStatusLabel,
   type Invoice,
+  type InvoiceStatusLabel,
 } from "@/lib/invoices";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,67 +17,129 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const STATUS_BADGE_CLASSNAME: Record<string, string> = {
-  Overdue: "",
-  "Due soon":
-    "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  Upcoming: "",
-  Paid: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+const STATUS_BADGE_CLASSNAME: Record<InvoiceStatusLabel, string> = {
+  Overdue: "border-destructive/40 bg-destructive/10 text-destructive",
+  "Due soon": "border-amber-500/40 bg-amber-500/10 text-amber-400",
+  Upcoming: "border-border bg-muted/40 text-muted-foreground",
+  Paid: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
 };
+
+function StatusBadge({ label }: { label: InvoiceStatusLabel }) {
+  return (
+    <Badge variant="outline" className={STATUS_BADGE_CLASSNAME[label]}>
+      {label}
+    </Badge>
+  );
+}
+
+function InvoiceActions({ invoice }: { invoice: Invoice }) {
+  if (invoice.status === "paid") return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <form action={markInvoicePaid.bind(null, invoice.id)}>
+        <Button type="submit" variant="outline" size="sm">
+          Mark as paid
+        </Button>
+      </form>
+      <Button type="button" variant="ghost" size="sm" disabled>
+        Draft reminder
+      </Button>
+    </div>
+  );
+}
 
 export function InvoiceTable({ invoices }: { invoices: Invoice[] }) {
   if (invoices.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No invoices yet — add your first one above.
-      </p>
+      <div className="rounded-2xl border border-dashed border-border px-6 py-14 text-center">
+        <p className="text-sm font-medium">No invoices yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add your first one above to start tracking it.
+        </p>
+      </div>
     );
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Client</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Due date</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      {/* Mobile: stacked cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
         {invoices.map((invoice) => {
           const label = getInvoiceStatusLabel(invoice);
-          const variant = label === "Overdue" ? "destructive" : "outline";
 
           return (
-            <TableRow key={invoice.id}>
-              <TableCell>{invoice.client_name}</TableCell>
-              <TableCell>
+            <div
+              key={invoice.id}
+              className="rounded-2xl border border-border bg-card p-5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{invoice.client_name}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Due {formatInvoiceDate(invoice.due_date)}
+                  </p>
+                </div>
+                <StatusBadge label={label} />
+              </div>
+              <p className="mt-4 font-mono text-xl font-semibold tabular-nums">
                 {formatInvoiceAmount(invoice.amount, invoice.currency)}
-              </TableCell>
-              <TableCell>{invoice.due_date}</TableCell>
-              <TableCell>
-                <Badge
-                  variant={variant}
-                  className={STATUS_BADGE_CLASSNAME[label]}
-                >
-                  {label}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {invoice.status !== "paid" && (
-                  <form action={markInvoicePaid.bind(null, invoice.id)}>
-                    <Button type="submit" variant="outline" size="sm">
-                      Mark as paid
-                    </Button>
-                  </form>
-                )}
-              </TableCell>
-            </TableRow>
+              </p>
+              <div className="mt-4">
+                <InvoiceActions invoice={invoice} />
+              </div>
+            </div>
           );
         })}
-      </TableBody>
-    </Table>
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden overflow-hidden rounded-2xl border border-border sm:block">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border bg-muted/30 hover:bg-muted/30">
+              <TableHead className="h-11 px-5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Client
+              </TableHead>
+              <TableHead className="h-11 px-5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Amount
+              </TableHead>
+              <TableHead className="h-11 px-5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Due date
+              </TableHead>
+              <TableHead className="h-11 px-5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Status
+              </TableHead>
+              <TableHead className="h-11 px-5" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invoices.map((invoice) => {
+              const label = getInvoiceStatusLabel(invoice);
+
+              return (
+                <TableRow key={invoice.id} className="border-border">
+                  <TableCell className="px-5 py-4 font-medium">
+                    {invoice.client_name}
+                  </TableCell>
+                  <TableCell className="px-5 py-4 font-mono tabular-nums">
+                    {formatInvoiceAmount(invoice.amount, invoice.currency)}
+                  </TableCell>
+                  <TableCell className="px-5 py-4 text-muted-foreground">
+                    {formatInvoiceDate(invoice.due_date)}
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <StatusBadge label={label} />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <InvoiceActions invoice={invoice} />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
