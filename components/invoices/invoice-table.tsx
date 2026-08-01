@@ -1,4 +1,4 @@
-import { markInvoicePaid } from "@/app/app/actions";
+import { markInvoicePaid, markInvoicePending } from "@/app/app/actions";
 import {
   formatInvoiceAmount,
   formatInvoiceDate,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/invoices";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteInvoiceDialog } from "@/components/invoices/delete-invoice-dialog";
 import {
   Table,
   TableBody,
@@ -33,15 +34,25 @@ function StatusBadge({ label }: { label: InvoiceStatusLabel }) {
 }
 
 function InvoiceActions({ invoice }: { invoice: Invoice }) {
-  if (invoice.status === "paid") return null;
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <form action={markInvoicePaid.bind(null, invoice.id)}>
-        <Button type="submit" variant="outline" size="sm">
-          Mark as paid
-        </Button>
-      </form>
+      {invoice.status === "paid" ? (
+        <form action={markInvoicePending.bind(null, invoice.id)}>
+          <Button type="submit" variant="outline" size="sm">
+            Mark as pending
+          </Button>
+        </form>
+      ) : (
+        <form action={markInvoicePaid.bind(null, invoice.id)}>
+          <Button type="submit" variant="outline" size="sm">
+            Mark as paid
+          </Button>
+        </form>
+      )}
+      <DeleteInvoiceDialog
+        invoiceId={invoice.id}
+        clientName={invoice.client_name}
+      />
       <Button type="button" variant="ghost" size="sm" disabled>
         Draft reminder
       </Button>

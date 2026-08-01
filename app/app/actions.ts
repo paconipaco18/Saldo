@@ -49,3 +49,15 @@ export async function markInvoicePaid(id: string) {
   await supabase.from("invoices").update({ status: "paid" }).eq("id", id);
   revalidatePath("/app");
 }
+
+export async function markInvoicePending(id: string) {
+  const supabase = await createClient();
+  await supabase.from("invoices").update({ status: "pending" }).eq("id", id);
+  revalidatePath("/app");
+}
+
+export async function deleteInvoice(id: string) {
+  const supabase = await createClient();
+  await supabase.from("invoices").delete().eq("id", id);
+  revalidatePath("/app");
+}
