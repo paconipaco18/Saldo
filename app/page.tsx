@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ClockIcon, FileTextIcon, SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
+import { HeroChannelsBeam } from "@/components/hero-channels-beam";
+import { Testimonials } from "@/components/testimonials";
 
 const FEATURES = [
   {
@@ -85,8 +87,12 @@ export default function Home() {
                 Ya tengo cuenta
               </Button>
             </div>
+
+            <HeroChannelsBeam />
           </div>
         </section>
+
+        <Testimonials />
 
         {/* Features */}
         <section className="mx-auto w-full max-w-6xl px-5 pb-24 sm:px-8 sm:pb-32">
